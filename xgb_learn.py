@@ -19,6 +19,15 @@ def load_seq_data(file_list):
 
     return seq_data
 
+def load_data_list_set(file_name, cloud_list):
+	# load data from file
+	df_data = pd.read_csv(file_name)
+	print(df_data)
+	data_list_set = []
+	for col in cloud_list:
+		data_list_set.append(df_data[col].tolist())
+	return data_list_set
+
 def show_data_set(data_list, figure = False):
     # display data set
     if figure:
@@ -77,7 +86,7 @@ def xgb_regression(X_train, y_train, X_test, y_test):
 
     return prediction
 
-def plot_train_result(y_train, y_test, predictions, feature_points, predict_points):
+def plot_train_result(y_train, y_test, predictions, feature_points, predict_points, cloud_name):
     train_len = y_train.shape[0]
     test_len = y_test.shape[0]
     pre_show = 4
@@ -102,7 +111,7 @@ def plot_train_result(y_train, y_test, predictions, feature_points, predict_poin
 
     # plot
     df_result.plot()
-    plt.title("aliyun_prediction: n=%s, predict_points=%s" %(feature_points, predict_points))
+    plt.title("%s_prediction: n=%s, predict_points=%s" %(cloud_name, feature_points, predict_points))
     plt.xlabel("timeline")
     plt.ylabel("traffic")
     plt.grid()
@@ -116,28 +125,34 @@ if __name__ == '__main__':
     with open("config.json", "r", encoding="utf-8") as config:
         config_json = json.load(config)
     model_param = config_json["model_param"]
-    data_file_list = ["./data/aliyun_hour_46.csv", "./data/aliyun_hour_47.csv", "./data/aliyun_hour_48.csv"]
-    #data_file_list = ["./data/aliyun_hour_46.csv"]
-
+    #data_file_list = ["./data/aliyun_hour_46.csv", "./data/aliyun_hour_47.csv", "./data/aliyun_hour_48.csv"]
+    data_file_name = "./data/input_data.csv"
     # read data
-    data_list = load_seq_data(data_file_list)
+    # data_list = load_seq_data(data_file_list)
 
     # show data
-    show_data_set(data_list, figure=False)
+    # show_data_set(data_list, figure=False)
+    cloud_name_list =['tencent','ali','sum_13']
 
-    # construct train data set
-    X, y = construct_data_set(data_list, model_param["feature_points"])
+    data_list_set = load_data_list_set(data_file_name, cloud_name_list)
 
-    # split data
-    X_train, X_test, y_train, y_test = split_data_set(X, y, ratio = 0.01, random = False, predict = model_param["predict_points"])
+    i = 0
+    for data_list in data_list_set:
+        # construct train data set
+        X, y = construct_data_set(data_list, model_param["feature_points"])
 
-    print("X_train   : ", X_train.shape)
-    print("X_test    : ", X_test.shape)
-    print("y_train   : ", y_train.shape)
-    print("y_test    : ", y_test.shape)
+        # split data
+        X_train, X_test, y_train, y_test = split_data_set(X, y, ratio = 0.01, random = False, predict = model_param["predict_points"])
 
-    prediction = xgb_regression(X_train, y_train, X_test, y_test)
+        print("X_train   : ", X_train.shape)
+        print("X_test    : ", X_test.shape)
+        print("y_train   : ", y_train.shape)
+        print("y_test    : ", y_test.shape)
 
-    plot_train_result(y_train, y_test, prediction, model_param["feature_points"], model_param["predict_points"])
+        prediction = xgb_regression(X_train, y_train, X_test, y_test)
+
+        plot_train_result(y_train, y_test, prediction, model_param["feature_points"], model_param["predict_points"], cloud_name_list[i])
+        i += 1
+
 
 

@@ -1,13 +1,14 @@
 import csv
 import pandas as pd
 import numpy as np
+import json
 import matplotlib.pyplot as plt
-from sklearn import datasets
 import xgboost as xgb
 from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import train_test_split
 
 def load_seq_data(file_list):
+    # load data from file
     seq_data = []
     for file_path in file_list:
         print("#reading sequence data from file :", file_path)
@@ -37,12 +38,10 @@ def construct_data_set(data_list, shift = 7):
         d = i + 1
         data_set_df["x_%s" %d] =  data_set_df["x_0"].shift(-d)
 
-
     data_set_df["y"] = data_set_df["x_0"].shift(shift)
     data_set_df.dropna(inplace=True)
 
     print(data_set_df)
-
     data_array = data_set_df.values
 
     # split to X, y
@@ -65,6 +64,7 @@ def split_data_set(X, y, ratio=0.1, random = False, predict = 10):
     return X_train, X_test, y_train, y_test
 
 def xgb_regression(X_train, y_train, X_test, y_test):
+    # init model and train
     model = xgb.XGBRegressor()
     model.fit(X_train, y_train)
 
@@ -97,20 +97,25 @@ def plot_train_result(y_train, y_test, predictions, feature_points, predict_poin
     y3 = predictions
     df_predict = pd.DataFrame(y3, index = x3, columns=["predict"])
 
+    # concat train, test, prediction
     df_result = pd.concat([df_train, df_test, df_predict], axis=0)
+
+    # plot
     df_result.plot()
     plt.title("aliyun_prediction: n=%s, predict_points=%s" %(feature_points, predict_points))
     plt.xlabel("timeline")
     plt.ylabel("traffic")
     plt.grid()
-    plt.legend(["train", "test", "predict"])
     plt.show()
 
 
 if __name__ == '__main__':
     print("============== XGBoost training process ==============")
-    feature_points = 48
-    predict_points = 24
+
+    # load config from file config.json
+    with open("config.json", "r", encoding="utf-8") as config:
+        config_json = json.load(config)
+    model_param = config_json["model_param"]
     data_file_list = ["./data/aliyun_hour_46.csv", "./data/aliyun_hour_47.csv", "./data/aliyun_hour_48.csv"]
     #data_file_list = ["./data/aliyun_hour_46.csv"]
 
@@ -118,13 +123,13 @@ if __name__ == '__main__':
     data_list = load_seq_data(data_file_list)
 
     # show data
-    show_data_set(data_list, figure=True)
+    show_data_set(data_list, figure=False)
 
     # construct train data set
-    X, y = construct_data_set(data_list, feature_points)
+    X, y = construct_data_set(data_list, model_param["feature_points"])
 
     # split data
-    X_train, X_test, y_train, y_test = split_data_set(X, y, ratio = 0.01, random = False, predict = predict_points)
+    X_train, X_test, y_train, y_test = split_data_set(X, y, ratio = 0.01, random = False, predict = model_param["predict_points"])
 
     print("X_train   : ", X_train.shape)
     print("X_test    : ", X_test.shape)
@@ -133,5 +138,6 @@ if __name__ == '__main__':
 
     prediction = xgb_regression(X_train, y_train, X_test, y_test)
 
-    plot_train_result(y_train, y_test, prediction, feature_points, predict_points)
+    plot_train_result(y_train, y_test, prediction, model_param["feature_points"], model_param["predict_points"])
+
 

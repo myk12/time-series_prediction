@@ -1,0 +1,7 @@
+{
+    "model_param" : {
+        "feature_points" : 48,
+        "predict_points" : 24
+    },
+    "data_path" : "./data/"
+}

@@ -1,7 +1,11 @@
 {
-    "model_param" : {
-        "feature_points" : 48,
-        "predict_points" : 24
+    "model_params" : {
+        "feature_points_length" : 48,
+        "test_size_ration" : 0.1
     },
-    "data_path" : "./data/"
+    "data_path"     : "./data/",
+    "data_filename" : "./data/input_data.csv",
+    "cdn_name_list" : ["tencent", "ali", "sum_13"],
+    "ml_model_list" : ["xgboost", "svm"]
 }
+

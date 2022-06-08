@@ -5,13 +5,15 @@ import numpy as np
 import xgboost as xgb
 import matplotlib.pyplot as plt
 from sklearn import metrics
+from sklearn.svm import SVR
 
 class xgb_regression:
-    def __init__(self, cdn_name, data_series, model_params):
+    def __init__(self, cdn_name, data_series, model_params, learner):
         logging.info("initing object xgb_regression...")
         self.cdn_name     = cdn_name
         self.data_series  = data_series
         self.model_params = model_params
+        self.learner      = learner
 
     def construct_data_set(self):
         logging.info("construct to train data set.")
@@ -40,11 +42,17 @@ class xgb_regression:
         y_train, y_test = y[: -test_size], y[-test_size :]
 
         #create and train model
-        xgb_regressor = xgb.XGBRegressor()
-        xgb_regressor.fit(X_train, y_train)
+        if self.learner == "xgboost":
+            xgb_regressor = xgb.XGBRegressor()
+            xgb_regressor.fit(X_train, y_train)
 
-        #predict on test data
-        prediction = xgb_regressor.predict(X_test)
+            #predict on test data
+            prediction = xgb_regressor.predict(X_test)
+        elif self.learner == "svm":
+            poly_svr = SVR()
+            poly_svr.fit(X_train, y_train)
+
+            prediction = poly_svr.predict(X_test)
 
         self.y_train = y_train
         self.y_test  = y_test
@@ -75,7 +83,8 @@ class xgb_regression:
         plt.xlabel("timeline")
         plt.ylabel("traffic")
         plt.grid()
-        plt.show()
+        #plt.show()
+        plt.savefig(self.cdn_name + "_" + self.learner)
 
     def calculate_error(self):
         logging.info("calculating model prediction error")
@@ -93,4 +102,5 @@ class xgb_regression:
 
 if __name__ == '__main__':
     print("============== XGBoost training process ==============")
+
 
